@@ -40,7 +40,6 @@
 			til *= args.pixel;
 			// Cheekily pretend to the next function that we haven't really scrolled
 			args.t -= til;
-			console.log(args.t);
 			if (args.t < 0) return false;
 			return [0,0];
 		};
@@ -54,18 +53,16 @@
 		speed = 2 * Math.PI / speed;
 
 		return function(event, args) {
-			if (! Array.isArray(centre)) {
+			var c = centre;
+			if (! Array.isArray(c)) {
 				// Assume jquery object - this might move so we recalculate
-				var offset = centre.offset();
-				centre = [offset.left + (centre.outerWidth() / 2), offset.top + (centre.outerHeight()/2)];
+				var offset = c.offset();
+				c = [offset.left + (c.outerWidth() / 2), offset.top + (c.outerHeight()/2)];
 			}
 
-			console.log(startPoint, centre);
 
-			var radius = Math.abs(Math.sqrt(Math.pow(startPoint.top - centre[1], 2) + Math.pow(startPoint.left - centre[0], 2)));
+			var radius = Math.abs(Math.sqrt(Math.pow(startPoint.top - c[1], 2) + Math.pow(startPoint.left - c[0], 2)));
 			var ret = [radius * Math.cos(args.scroll_top * speed) + adjust[0], radius * Math.sin(args.scroll_top * speed) - adjust[1]];
-			console.log(radius);
-			console.log([Math.cos(args.scroll_top * speed), Math.sin(args.scroll_top * speed)]);
 			return ret;
 		};
 	};
