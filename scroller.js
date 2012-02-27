@@ -1,4 +1,10 @@
 (function() {
+	if (!('isArray' in Array)) {
+	    Array.isArray = function(o) {
+	        return Object.prototype.toString.call(o)==='[object Array]';
+	    };
+	}
+
 	var Scroller = {};
 
 	Scroller.parallax = function(layer) {
@@ -7,9 +13,7 @@
 		return function(event, args) {
 			var $this = $(this);
 			
-			var ret = [0, 0 - (args.t * coef) / args.pixel];
-			console.log(ret);
-			return ret;
+			return [0, 0 - (args.t * coef) / args.pixel];
 		};
 	};
 
@@ -26,13 +30,6 @@
 		}
 	};
 
-	// TODO: use position: fixed
-	Scroller.holdstill = function(from, to) {
-		return function(event, args){
-			return [0,args.t/args.pixel];	
-		};
-	};
-
 	Scroller.wait = function(until) {
 		return function(event, args) {
 			var til = until;
@@ -46,6 +43,30 @@
 			console.log(args.t);
 			if (args.t < 0) return false;
 			return [0,0];
+		};
+	};
+
+	Scroller.orbit = function(speed, centre) {
+		var self = $(this);
+
+		var startPoint = self.offset();
+		var adjust = [self.outerWidth() / 2, self.outerHeight() / 2];
+		speed = 2 * Math.PI / speed;
+
+		return function(event, args) {
+			if (! Array.isArray(centre)) {
+				// Assume jquery object - this might move so we recalculate
+				var offset = centre.offset();
+				centre = [offset.left + (centre.outerWidth() / 2), offset.top + (centre.outerHeight()/2)];
+			}
+
+			console.log(startPoint, centre);
+
+			var radius = Math.abs(Math.sqrt(Math.pow(startPoint.top - centre[1], 2) + Math.pow(startPoint.left - centre[0], 2)));
+			var ret = [radius * Math.cos(args.scroll_top * speed) + adjust[0], radius * Math.sin(args.scroll_top * speed) - adjust[1]];
+			console.log(radius);
+			console.log([Math.cos(args.scroll_top * speed), Math.sin(args.scroll_top * speed)]);
+			return ret;
 		};
 	};
 
