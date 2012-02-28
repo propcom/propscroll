@@ -98,6 +98,17 @@ if 'slide' came before 'orbit', 'orbit' would undo any changes 'slide' made.
 
 ### 3. Animations and Controls
 
+Animations and controls stack. An animation is a function that moves the element, and a control is
+a function that affects the rest of the animation chain. Some animations may completely eradicate
+the effects of previous animations in the chain, so be sure you're aware of which these are.
+
+The animation chain is simply a collection of functions that run one after the other when the page
+scroll position changes. Controls may prevent the chain from running or may manipulate the values
+to alter the behaviour of later functions in the chain.
+
+Generally, an animation will affect the position of the element, and a control will affect the
+parameters that animations use.
+
 #### a. `between`
 
 `between` takes 1 or 2 arguments
@@ -134,6 +145,28 @@ pixels across and `y` pixels down, and it will complete the slide when the page 
 This animation causes the element to orbit another element by 1 revolution every `speed` pixels of 
 scroll. The element's orientation is maintained, which makes it different from simply rotating the
 element using CSS rotation. A positive value for `speed` will be a clockwise rotation.
+
+The radius of the orbit is defined when the page loads, so moving the centre object will not have
+an effect on the orbit. If you want to slide an orbital system, add the slide animation with the
+same parameters to all of the components after their orbit animation.
+
+Orbit will reset the x,y position of the element regardless of changes any previous animations may
+have made, because it is orbiting a point that is fixed at page load time, so it should always be
+the first actual animation in a chain.
+
+#### d. `parallax`
+
+`parallax` takes 1 argument:
+
+* layer - the perceived layer on which the element lies
+
+The document is divided into layers, which tend to correspond to the z-index of the elements. The
+layer on which normal content resides is layer 0. Hence, negative layer numbers will be behind the
+document layer, and positive layer numbers will be above it.
+
+Higher layer numbers scroll up the screen faster than lower layer numbers; hence, higher layers
+appear to be above lower layers by moving faster than them. Negative layers scroll slower than the
+document itself.
 
 ### 4. Concepts
 
