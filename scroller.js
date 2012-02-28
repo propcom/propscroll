@@ -72,21 +72,21 @@
 		speed = 2 * pi / speed;
 		start_at *= pi / 180; // radians. 
 
+		if (! Array.isArray(centre)) {
+			var offset = centre.offset();
+			centre = [offset.left + (centre.outerWidth() / 2), offset.top + (centre.outerHeight()/2)];
+		}
+
 		return function(event, args) {
-			var c = centre;
-			if (! Array.isArray(c)) {
-				// Assume jquery object - this might move so we recalculate
-				var offset = c.offset();
-				c = [offset.left + (c.outerWidth() / 2), offset.top + (c.outerHeight()/2)];
-			}
+			var radius = 
+				Math.abs(
+					sqrt(
+						pow(args.elem_offset.top + adjust[1] - centre[1], 2) 
+					  + pow(args.elem_offset.left + adjust[0] - centre[0], 2)
+				));
 
-			var radius = Math.abs(sqrt(pow(args.elem_offset.top + adjust[1] - c[1], 2) + pow(args.elem_offset.left + adjust[0] - c[0], 2)));
-
-			console.log(args.scroll_top);
-			console.log(cos(args.scroll_top), sin(args.scroll_top));
-
-			args.elem_offset.left = radius * cos(args.scroll_top * speed + start_at) - adjust[0] + c[0];
-			args.elem_offset.top = radius * sin(args.scroll_top * speed + start_at) - adjust[1] + c[1];
+			args.elem_offset.left = radius * cos(args.scroll_top * speed + start_at) - adjust[0] + centre[0];
+			args.elem_offset.top = radius * sin(args.scroll_top * speed + start_at) - adjust[1] + centre[1];
 		};
 	};
 
@@ -109,7 +109,7 @@
 
 			elements.push(elem);
 
-			// Apply the [x,y] to the original position of the element at all times.
+			// Each chain should start based on the original position of the element.
 			var offset = elem.offset();
 				
 			// Go through the listed animations in order so that each subsequent one
