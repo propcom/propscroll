@@ -13,7 +13,8 @@
 		return function(event, args) {
 			var $this = $(this);
 			
-			return [0, 0 - (args.t * coef) / args.pixel];
+			args.elem_offset.left += 0;
+			args.elem_offset.top += 0 - (args.t * coef) / args.pixel;
 		};
 	};
 
@@ -24,9 +25,10 @@
 			var t = dt * args.pixel;
 			var proportion = args.t/t;
 
-			if (proportion > 1) return [dx, dy];
+			if (proportion > 1) return;
 
-			return [dx * proportion, dy * proportion];
+			args.elem_offset.left += dx * proportion;
+			args.elem_offset.top += dy * proportion;
 		}
 	};
 
@@ -37,20 +39,38 @@
 				til = $(this).offset().top - args.view_height;
 			}
 
+			// Cheekily pretend to the next function that the scroll really started
+			// at our wait-until location! Hax.
+			args.scroll_top -= til;
+
 			til *= args.pixel;
-			// Cheekily pretend to the next function that we haven't really scrolled
 			args.t -= til;
+
 			if (args.t < 0) return false;
-			return [0,0];
+			return;
 		};
 	};
 
-	Scroller.orbit = function(speed, centre) {
+	/*
+	 * orbit - revolve around position defined by <centre>, at speed defined by <speed>
+	 *         This animation is *absolute* and will hence undo any positioning done by
+	 *         prior animations. To adjust the orbit, apply transformations afterwards.
+	 *
+	 *   speed: Number of pixels of scroll to complete one full rotation. Positive numbers
+	 *          scroll clockwise; negative numbers, anticlockwise.
+	 *   centre: Either an array of [x, y] or a jQuery object, whose centre will be used.
+	 *   start_at: Optional distance round the circle to start, in degrees.
+	 */
+	Scroller.orbit = function(speed, centre, start_at) {
 		var self = $(this);
 
-		var startPoint = self.offset();
+		start_at = start_at || 0;
+		
+		var cos = Math.cos, sin = Math.sin, sqrt = Math.sqrt, pi = Math.PI, pow = Math.pow;
+
 		var adjust = [self.outerWidth() / 2, self.outerHeight() / 2];
-		speed = 2 * Math.PI / speed;
+		speed = 2 * pi / speed;
+		start_at *= pi / 180; // radians. 
 
 		return function(event, args) {
 			var c = centre;
@@ -60,10 +80,13 @@
 				c = [offset.left + (c.outerWidth() / 2), offset.top + (c.outerHeight()/2)];
 			}
 
+			var radius = Math.abs(sqrt(pow(args.elem_offset.top + adjust[1] - c[1], 2) + pow(args.elem_offset.left + adjust[0] - c[0], 2)));
 
-			var radius = Math.abs(Math.sqrt(Math.pow(startPoint.top - c[1], 2) + Math.pow(startPoint.left - c[0], 2)));
-			var ret = [radius * Math.cos(args.scroll_top * speed) + adjust[0], radius * Math.sin(args.scroll_top * speed) - adjust[1]];
-			return ret;
+			console.log(args.scroll_top);
+			console.log(cos(args.scroll_top), sin(args.scroll_top));
+
+			args.elem_offset.left = radius * cos(args.scroll_top * speed + start_at) - adjust[0] + c[0];
+			args.elem_offset.top = radius * sin(args.scroll_top * speed + start_at) - adjust[1] + c[1];
 		};
 	};
 
@@ -94,9 +117,13 @@
 			// event separately because we want synchronicity
 			elem.bind('scroller.animate', function(event, args) {
 				var new_offset = $.extend({}, offset);
-				// clone the args for each animation chain, so any animation can alter it
-				// without buggering it up for everyone else.
+
+				// The interface to animating the element is to literally change the args
+				// object as we go down the chain, or to return false to stop the chain.
+				// Hence, we must close over a clone of it.
 				var chain_args = $.extend({}, args);
+				chain_args.elem_offset = $.extend({}, offset);
+
 				$.each(animations, function(i, anim) {
 
 					// we want elem in $(this)
@@ -106,12 +133,9 @@
 					if (shift === false) {
 						return false;
 					}
-
-					new_offset.left += shift[0];
-					new_offset.top += shift[1];
 				});
 
-				$(this).offset(new_offset);
+				$(this).offset(chain_args.elem_offset);
 			});
 		};
 		
