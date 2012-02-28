@@ -32,22 +32,41 @@
 		}
 	};
 
-	Scroller.wait = function(until) {
+	Scroller.between = function(from, to) {
 		return function(event, args) {
-			var til = until;
-			if (til == 'onscreen') {
-				til = $(this).offset().top - args.view_height;
+			var f = from;
+			var t = to;
+			var total_height = t-f;
+
+			if (f == 'onscreen') {
+				f = elem_offset.top - args.view_height;
+			}
+			if (t == 'offscreen') {
+				t = elem_offset.top + $(this).outerHeight();
 			}
 
-			// Cheekily pretend to the next function that the scroll really started
-			// at our wait-until location! Hax.
-			args.scroll_top -= til;
+			// Subtract the "from" position from scroll position.
+			args.scroll_top -= f;
+			f *= args.pixel;
+			args.t -= f;
 
-			til *= args.pixel;
-			args.t -= til;
+			// If the result is > 0 we have scrolled past that
+			if (args.t > 0) {
+				// We don't subtract the "to" position and test that because it'll 
+				// ruin the scroll values for the chain.
+				if (t == undefined || args.scroll_top < total_height) {
+					return;
+				}
 
-			if (args.t < 0) return false;
-			return;
+				// Stop all scrolling activity past t
+				// Don't return false - we actually want to halt further animations, rather than reset them
+				args.scroll_top = total_height;
+				args.t = total_height * args.pixel;
+				return;
+			}
+			
+			// If t < 0 we don't start yet
+			return false;
 		};
 	};
 
