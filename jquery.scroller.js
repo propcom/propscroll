@@ -7,6 +7,13 @@
 
 	var Scroller = {};
 
+	/*
+	 * parallax - Scroll faster or slower than the page to produce a parallax effect.
+	 *
+	 * layer: The perceived layer the element will be on. The main page is on layer zero.
+	 *        Negative layers will be behind the main content; positive in front. (Assuming
+	 *        you style it properly so they look like that)
+	 */
 	Scroller.parallax = function(layer) {
 		// use layer as coefficient of t value
 		var coef = Math.pow(2, layer) - 1;
@@ -18,7 +25,14 @@
 		};
 	};
 
-	// Slide by (dx, dy) pixels over dt pixels of scrolling.
+	/*
+	 * slide - Move <x> pixels rightwards and <y> pixels downwards over
+	 *         a range of <scroll> pixels of scroll.
+	 *
+	 * x: Distance to move in X. Positive is rightwards; negative, leftwards.
+	 * y: Distance to move in Y. Positive is downwards; negative, upwards.
+	 * scroll: Scroll range over which this movement will happen.
+	 */
 	Scroller.slide = function(dx, dy, dt) {
 		return function(event, args) {
 			// convert dt out of pixel values
@@ -32,6 +46,16 @@
 		}
 	};
 
+	/* 
+	 * between - constrain further animations in the chain to the specified
+	 *           scroll region.
+	 *
+	 * from: Scroll position in pixels at which animation will start, or 
+	 *       'onscreen' to wait for the element to scroll into view.
+	 * to: Scroll position in pixels at which to stop the animation, or
+	 *     'offscreen', as if it matters, to wait for the element to scroll
+	 *     out of view.
+	 */
 	Scroller.between = function(from, to) {
 		return function(event, args) {
 			var f = from;
@@ -71,9 +95,12 @@
 	};
 
 	/*
-	 * orbit - revolve around position defined by <centre>, at speed defined by <speed>
+	 * orbit - revolve around position defined by <centre>, at speed defined by <speed>.
 	 *         This animation is *absolute* and will hence undo any positioning done by
 	 *         prior animations. To adjust the orbit, apply transformations afterwards.
+	 *
+	 *         This differs from CSS rotate because it will not affect the orientation of
+	 *         the element as it orbits.
 	 *
 	 *   speed: Number of pixels of scroll to complete one full rotation. Positive numbers
 	 *          scroll clockwise; negative numbers, anticlockwise.
@@ -106,6 +133,101 @@
 
 			args.elem_offset.left = radius * cos(args.scroll_top * speed + start_at) - adjust[0] + centre[0];
 			args.elem_offset.top = radius * sin(args.scroll_top * speed + start_at) - adjust[1] + centre[1];
+		};
+	};
+
+	/*
+	 * rotate - use CSS rotation transform to rotate around <centre> at a speed defined by
+	 *          <speed>.
+	 *
+	 *   speed: Number of pixels of scroll to complete one full rotation. Positive numbers
+	 *          scroll clockwise; negative numbers, anticlockwise.
+	 *   centre: Array of [x, y] to set the default centre of rotation as % a la CSS.
+	 *   start_at: Optional distance round the circle to start, in degrees.
+	 */
+	Scroller.rotate = function(speed, centre, start_at) {
+		var self = $(this);
+
+		var setup = {}
+
+		if (centre) {
+			$.extend(setup, {
+				'transform-origin': centre[0] + '% ' + centre[1] + '%',
+				'-ms-transform-origin': centre[0] + '% ' + centre[1] + '%',
+				'-webkit-transform-origin': centre[0] + '% ' + centre[1] + '%',
+				'-moz-transform-origin': centre[0] + '% ' + centre[1] + '%',
+				'-o-transform-origin': centre[0] + '% ' + centre[1] + '%'
+			});
+		}
+
+		if (start_at) {
+			$.extend(setup, {
+				'transform': 'rotate(' + start_at + 'deg)',
+				'-ms-transform': 'rotate(' + start_at + 'deg)',
+				'-webkit-transform': 'rotate(' + start_at + 'deg)',
+				'-moz-transform': 'rotate(' + start_at + 'deg)',
+				'-o-transform': 'rotate(' + start_at + 'deg)'
+			});
+		}
+
+		console.log(setup);
+		self.css(setup);
+
+		start_at = 0;
+
+		return function (event, args) {
+			var t_speed = speed * args.pixel;
+			
+			console.log(args);
+
+			var deg = 360  * (args.t / t_speed) + start_at;
+
+			var css = {
+				'transform': 'rotate(' + deg + 'deg)',
+				'-ms-transform': 'rotate(' + deg + 'deg)',
+				'-webkit-transform': 'rotate(' + deg + 'deg)',
+				'-moz-transform': 'rotate(' + deg + 'deg)',
+				'-o-transform': 'rotate(' + deg + 'deg)'
+			};
+
+			self.css(css);
+		}
+	};
+
+	/*
+	 * css - tween some CSS attributes over <speed> pixels. For CSS rotate transform, use rotate.
+	 *
+	 *   speed: Number of pixels of scroll to go from current value to new value.
+	 *   attributes: Object with CSS attributes as properties and the target value as values.
+	 *               Only numeric values are supported, of course. Units used need to match the
+	 *               ones defined by your CSS. CSS values not predefined will be ignored.
+	 */
+	Scroller.css = function(speed, attr) {
+		var self = $(this),
+			original_values = {};
+
+		$.each(attr, function(key, value) {
+			original_values[key] = self.css(key);
+		});
+
+		console.log(original_values);
+
+		return function(event, args) {
+			var css = {};
+			var t_speed = speed * args.pixel;
+			$.each(attr, function(key, value) {
+				if (! original_values[key]) return;
+
+				var orig = parseFloat(original_values[key]),
+					target = parseFloat(value);
+
+				var current = (target - orig) * (args.t / t_speed);
+				if (current > target) current = target;
+
+				css[key] = original_values[key].replace(orig, current);
+			});
+
+			self.css(css);
 		};
 	};
 
