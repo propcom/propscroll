@@ -81,13 +81,18 @@ Then you put that array in the first array:
 and then you add this array to the *other* array that you put in `list of
 animations` when you call `add`:
 
-	api.add($(selector), [ ['slide', [600, 0, 800]] ]);
+	api.add($(selector), [ 
+		['slide', [600, 0, 800]] 
+	]);
 
 Using this method you can add as many animations as you want into the `add`
 method, but **be aware** that the order in which they are listed often matters.
 
-		api.add($('.orbit'), [ ['between', [400, 600]], ['orbit', [400,
-		$('.orbit-centre'), 180]], ['slide', [600, 0, 800]] ]);
+		api.add($('.orbit'), [ 
+			['between', [400, 600]], 
+			['orbit', [400, $('.orbit-centre'), 180]], 
+			['slide', [600, 0, 800]] 
+		]);
 
 In this example, 'between' comes first because it will affect 'orbit' and
 'slide' by preventing them from happening outside of the range 400-600. If it
@@ -98,8 +103,11 @@ adds a position, so if 'slide' came before 'orbit', 'orbit' would undo any
 changes 'slide' made.
 
 
-		api.add($('.slidey-turny'), [ [ 'rotate', [600, null, 90] ], [
-		'between', [50, 200] ], [ 'slide', [-200, 0, 200]] ]);
+		api.add($('.slidey-turny'), [ 
+			[ 'rotate', [600, null, 90] ], 
+			[ 'between', [50, 200] ], 
+			[ 'slide', [-200, 0, 200]] 
+		]);
 
 In this example, the rotate animation will play out all the time, but the slide
 animation will be constrained to the 50-200 range. Astute readers will note
