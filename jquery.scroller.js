@@ -8,6 +8,50 @@
 	var Scroller = {};
 
 	/*
+	 * class - add or remove a class
+	 *
+	 * This animation should be used with `shift` because it relies on a
+	 * negative scroll value.
+	 *
+	 * classname: The name of the class to add when the scroll value becomes
+	 *            positive, and to remove when it becomes negative. This uses
+	 *            the jQuery addClass/removeClass functions, so you can specify
+	 *            multiple classnames using spaces.
+	 */
+	Scroller.class = function(classname) {
+		var is_on = false; // this is cheaper than using hasClass
+		return function(event, args) {
+			console.log([args.t, is_on]);
+			if (args.t > 0 && !is_on) {
+				$(this).addClass(classname);
+				is_on = true;
+			}
+			else if (args.t <= 0 && is_on) {
+				$(this).removeClass(classname);
+				is_on = false;
+			}
+		}
+	};
+
+	/*
+	 * shift - Shift the scroll position by a number of pixels
+	 *
+	 * This control is different from `between` because animations will still play
+	 * after this one - but they may receive a negative scroll value.
+	 *
+	 * by: The number of pixels to shift it by. A positive number will cause
+	 *     later animations to begin that number of pixels of scroll later than
+	 *     it would have.
+	 */
+	Scroller.shift = function(by) {
+		return function(event, args) {
+			args.scroll_top -= by;
+			by *= args.pixel;
+			args.t -= by;
+		}
+	};
+
+	/*
 	 * parallax - Scroll faster or slower than the page to produce a parallax effect.
 	 *
 	 * layer: The perceived layer the element will be on. The main page is on layer zero.
@@ -60,7 +104,6 @@
 		return function(event, args) {
 			var f = from;
 			var t = to;
-			var total_height = t-f;
 
 			if (f == 'onscreen') {
 				f = elem_offset.top - args.view_height;
@@ -68,6 +111,8 @@
 			if (t == 'offscreen') {
 				t = elem_offset.top + $(this).outerHeight();
 			}
+
+			var total_height = t ? t-f : args.scroll_range - f;
 
 			// Subtract the "from" position from scroll position.
 			args.scroll_top -= f;
@@ -170,7 +215,6 @@
 			});
 		}
 
-		console.log(setup);
 		self.css(setup);
 
 		start_at = 0;
@@ -178,8 +222,6 @@
 		return function (event, args) {
 			var t_speed = speed * args.pixel;
 			
-			console.log(args);
-
 			var deg = 360  * (args.t / t_speed) + start_at;
 
 			var css = {
@@ -209,8 +251,6 @@
 		$.each(attr, function(key, value) {
 			original_values[key] = self.css(key);
 		});
-
-		console.log(original_values);
 
 		return function(event, args) {
 			var css = {};
