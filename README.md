@@ -88,11 +88,11 @@ animations` when you call `add`:
 Using this method you can add as many animations as you want into the `add`
 method, but **be aware** that the order in which they are listed often matters.
 
-		api.add($('.orbit'), [ 
-			['between', [400, 600]], 
-			['orbit', [400, $('.orbit-centre'), 180]], 
-			['slide', [600, 0, 800]] 
-		]);
+	api.add($('.orbit'), [ 
+		['between', [400, 600]], 
+		['orbit', [400, $('.orbit-centre'), 180]], 
+		['slide', [600, 0, 800]] 
+	]);
 
 In this example, 'between' comes first because it will affect 'orbit' and
 'slide' by preventing them from happening outside of the range 400-600. If it
@@ -103,11 +103,11 @@ adds a position, so if 'slide' came before 'orbit', 'orbit' would undo any
 changes 'slide' made.
 
 
-		api.add($('.slidey-turny'), [ 
-			[ 'rotate', [600, null, 90] ], 
-			[ 'between', [50, 200] ], 
-			[ 'slide', [-200, 0, 200]] 
-		]);
+	api.add($('.slidey-turny'), [ 
+		[ 'rotate', [600, null, 90] ], 
+		[ 'between', [50, 200] ], 
+		[ 'slide', [-200, 0, 200]] 
+	]);
 
 In this example, the rotate animation will play out all the time, but the slide
 animation will be constrained to the 50-200 range. Astute readers will note
@@ -139,11 +139,28 @@ will affect the parameters that animations use.
 * to - optional pixel value of the scroll position of the window at which to end
   the chain.
 
-This is a control animation and will prevent further animations from taking
-place if the **top of the window** is outside the specified range. Outside of
-the range, other animations remain static.
+This is a control and will prevent further animations from taking place if the
+**top of the window** is outside the specified range. Outside of the range,
+other animations remain static.
 
-#### b. `slide`
+#### b. `shift`
+
+`shift` takes one argument
+
+* by - pixel value to shift scroll position by.
+
+This is a control that shifts the scroll position for further animations. It does
+this by faking the position of the window. This means that animations won't start
+for `by` pixels more than they would have originally.
+
+The differences between this and `between` are
+
+* a) there is no upper limit for the shift, and
+* b) the rest of the chain will still carry on if the scroll position is less than
+     `by`. This means that animations further in the chain can receive a negative
+	 scroll value, which can be interesting.
+
+#### c. `slide`
 
 `slide` takes 3 arguments
 
@@ -156,7 +173,7 @@ This animation slides the element by a constant distance as the page scrolls.
 It will slide `x` pixels across and `y` pixels down, and it will complete the
 slide when the page has travelled `scroll` pixels.
 
-#### c. `orbit`
+#### d. `orbit`
 
 `orbit` takes 2 or 3 arguments
 
@@ -183,7 +200,7 @@ previous animations may have made, because it is orbiting a point that is fixed
 at page load time, so it should always be the first actual animation in a
 chain.
 
-#### d. `parallax`
+#### e. `parallax`
 
 `parallax` takes 1 argument:
 
@@ -198,7 +215,7 @@ Higher layer numbers scroll up the screen faster than lower layer numbers;
 hence, higher layers appear to be above lower layers by moving faster than
 them. Negative layers scroll slower than the document itself.
 
-#### e. `rotate`
+#### f. `rotate`
 
 `rotate` takes 1 argument and 2 further optional ones:
 
@@ -211,7 +228,7 @@ them. Negative layers scroll slower than the document itself.
 * start_at - A value in degrees to be the starting orientation of the element.
   If you have set a starting orientation in your CSS you must set this to match.
   
-#### f. `css`
+#### g. `css`
 
 `css` takes 2 arguments:
 
@@ -224,6 +241,27 @@ taken from the element itself - which is why you shouldn't use this for rotation
 
 Any requested property not already on the element is currently ignored. Defaulting
 these to zero is a todo.
+
+#### h. `class`
+
+`class` takes 1 argument:
+
+* classname - a jQuery-style string of classnames to apply/remove
+
+This animation adds a class when the scroll value goes above zero, and removes it
+again when the scroll value goes below (or becomes equal to) zero. Obviously this is
+not a whole lot of use *per se* because it would add the class as soon as any
+scrolling happened, but if you use `shift` before it then it will add the class at
+that scroll position:
+
+	api.add($('.show-at-50px'), [
+		['shift', [50]],
+		['class', ['show']]
+	]);
+
+If you add CSS transitions to the `.show` class and the class the element already
+has, you can do things like make the element fade in and out based on time instead
+of scroll.
 
 ### 4. Concepts
 
